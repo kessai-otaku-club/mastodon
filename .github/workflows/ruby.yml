@@ -17,7 +17,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y \
-        libpq-dev libxml2-dev libxslt1-dev file git-core g++ libprotobuf-dev protobuf-compiler pkg-config
+        libpq-dev libxml2-dev libxslt1-dev file git-core g++ libprotobuf-dev protobuf-compiler pkg-config nodejs gcc autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm5 libgdbm-dev yarn libidn11-dev libicu-dev libjemalloc-dev
         gem update --system
         gem install bundler --no-document
         bundle install \
