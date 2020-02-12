@@ -15,8 +15,8 @@ jobs:
         ruby-version: 2.6.x
     - name: Build and test with Rake
       run: |
-        apt update
-        apt install -y \
+        sudo apt update
+        sudo apt install -y \
         libpq-dev libxml2-dev libxslt1-dev file git-core g++ libprotobuf-dev protobuf-compiler pkg-conf$
         gem update --system
         gem install bundler --no-document
