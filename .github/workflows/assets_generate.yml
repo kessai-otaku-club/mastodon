@@ -1,0 +1,36 @@
+name: mastodon_assets_generater
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build docker images using cache
+      uses: actions/cache@v1
+      with:
+        path: ~/caches/docker.tar
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles(format('{0}{1}', github.workspace, '/docker-compose.yml')) }}
+        restore-keys:
+          ${{ runner.os }}-kessaidon-
+    - name: Initial setup
+      env:
+        ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
+      run: |
+        echo ${ENV_PRODUCTION} > .env.production
+        cat .env.production
+        ls -la
+    - name: Docker load
+      run: |
+        if [[ -e ~/caches/docker.tar ]]; then
+          docker load -i ~/caches/docker.tar
+        fi
+    - name: Docker build
+      run: docker-compose build
+    - name: Rails exec command
+      run: docker-compose run --rm web rails assets:precompile
+    - name: Check actions directory
+      run: echo 'Curennt directory' && ls && echo 'public directory' && ls public
