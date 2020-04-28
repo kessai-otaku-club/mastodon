@@ -3,6 +3,7 @@ name: scheduled_backup
 on:
   schedule:
     - cron: 0 4 * * *
+  push:
 
 jobs:
   scheduled_backup:
@@ -11,7 +12,10 @@ jobs:
     - name: Send to S3
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
-      run: pg_dump ${DB_NAME} > ~/tmp/db_backup/$(date "+%Y%m%d")_${DB_NAME}.dump
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+      run: echo ${DB_PASSWORD} > ~/.pgpass && chmod 600 ~/.pgpass && pg_dump -d ${DB_NAME} -U ${DB_USER} -h ${DB_HOST} -w > ~/tmp/db_backup/$(date "+%Y%m%d")_${DB_NAME}.dump
     - name: Configure AWS Credentials Action For GitHub Actions
       uses: aws-actions/configure-aws-credentials@v1
       with:
