@@ -9,8 +9,6 @@ jobs:
   scheduled_backup:
     runs-on: ubuntu-latest
     steps:
-    - name: pg_dump init
-      run: psql --version
     - name: db secret init
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
@@ -18,7 +16,7 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_HOST: ${{ secrets.DB_HOST }}
       run: echo "${{ secrets.DB_HOST }}:5432:${{ secrets.DB_NAME }}:${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}" > ~/.pgpass && chmod 600 ~/.pgpass
-    - name: debug
+    - name: pg_dump init
       run: sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt update && sudo apt install postgresql-client-12 -y
     - name: pg_dump backup
       env:
@@ -26,24 +24,22 @@ jobs:
         DB_USER: ${{ secrets.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_HOST: ${{ secrets.DB_HOST }}
-      run: psql --version && ls -al ~/ && pg_dump -d ${DB_NAME} -U ${DB_USER} -h ${DB_HOST} -w > $(date "+%Y%m%d")_${DB_NAME}.dump
-    - name: Configure AWS Credentials Action For GitHub Actions
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.S3_REGION }}
+      run: pg_dump -d ${DB_NAME} -U ${DB_USER} -h ${DB_HOST} -w > $(date "+%Y%m%d")_${DB_NAME}.dump
     - name: Send to S3
       env:
         AWS_S3_BACKUP_BUCKET: ${{ secrets.AWS_S3_BACKUP_BUCKET }}
         S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
         DB_NAME: ${{ secrets.DB_NAME }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: aws s3 cp $(date "+%Y%m%d")_${DB_NAME}.dump s3://${AWS_S3_BACKUP_BUCKET}/${DB_NAME}/ --endpoint-url=${S3_ENDPOINT}
     - name: Delete before 7days from s3
       env:
         AWS_S3_BACKUP_BUCKET: ${{ secrets.AWS_S3_BACKUP_BUCKET }}
         S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
         DB_NAME: ${{ secrets.DB_NAME }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: aws s3 rm s3://${AWS_S3_BACKUP_BUCKET}/${DB_NAME}/$(date '+%Y%m%d' -d '7 days ago')_${DB_NAME}.dump --endpoint-url=${S3_ENDPOINT}
     - name: Post result to mastodon
       env:
