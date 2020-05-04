@@ -12,14 +12,17 @@ jobs:
     - name: debug
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
-      run: echo ${DB_PASSWORD} > ~/.pgpass && chmod 600 ~/.pgpass && mkdir /tmp
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+      run: echo "${{ secrets.DB_HOST }}:5432:${{ secrets.DB_NAME }}:${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}" > ~/.pgpass && chmod 600 ~/.pgpass
     - name: Send to S3
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_USER: ${{ secrets.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_HOST: ${{ secrets.DB_HOST }}
-      run: pg_dump -d ${DB_NAME} -U ${DB_USER} -h ${DB_HOST} -w > /tmp/db_backup/$(date "+%Y%m%d")_${DB_NAME}.dump
+      run: echo ~/.pgpass && pg_dump -d ${DB_NAME} -U ${DB_USER} -h ${DB_HOST} -w > $(date "+%Y%m%d")_${DB_NAME}.dump
     - name: Configure AWS Credentials Action For GitHub Actions
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -31,7 +34,7 @@ jobs:
         AWS_S3_BACKUP_BUCKET: ${{ secrets.AWS_S3_BACKUP_BUCKET }}
         S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
         DB_NAME: ${{ secrets.DB_NAME }}
-      run: aws s3 cp /tmp/db_backup/$(date "+%Y%m%d")_${DB_NAME}.dump s3://${AWS_S3_BACKUP_BUCKET}/${DB_NAME}/ --endpoint-url=${S3_ENDPOINT}
+      run: aws s3 cp $(date "+%Y%m%d")_${DB_NAME}.dump s3://${AWS_S3_BACKUP_BUCKET}/${DB_NAME}/ --endpoint-url=${S3_ENDPOINT}
     - name: Delete before 7days from s3
       env:
         AWS_S3_BACKUP_BUCKET: ${{ secrets.AWS_S3_BACKUP_BUCKET }}
