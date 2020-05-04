@@ -9,6 +9,8 @@ jobs:
   scheduled_backup:
     runs-on: ubuntu-latest
     steps:
+    - name: pg_dump init
+      run: psql --version
     - name: db secret init
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
@@ -16,15 +18,15 @@ jobs:
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_HOST: ${{ secrets.DB_HOST }}
       run: echo "${{ secrets.DB_HOST }}:5432:${{ secrets.DB_NAME }}:${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}" > ~/.pgpass && chmod 600 ~/.pgpass
-    - name: pg_dump init
-      run: curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | cat | sudo apt-key add- && deb http://apt.postgresql.org/pub/repos/apt buster -pgdg main && sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $（lsb_release -cs）-pgdg main"> /etc/apt/sources.list.d/pgdg.list' && sudo apt update && sudo apt install -y postgresql
-    - name: Send to S3
+    - name: debug
+      run: sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt update && sudo apt install postgresql-client-12 -y
+    - name: pg_dump backup
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_USER: ${{ secrets.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_HOST: ${{ secrets.DB_HOST }}
-      run: echo ~/.pgpass && pg_dump -d ${DB_NAME} -U ${DB_USER} -h ${DB_HOST} -w > $(date "+%Y%m%d")_${DB_NAME}.dump
+      run: psql --version && ls -al ~/ && pg_dump -d ${DB_NAME} -U ${DB_USER} -h ${DB_HOST} -w > $(date "+%Y%m%d")_${DB_NAME}.dump
     - name: Configure AWS Credentials Action For GitHub Actions
       uses: aws-actions/configure-aws-credentials@v1
       with:
