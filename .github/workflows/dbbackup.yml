@@ -2,7 +2,7 @@ name: scheduled_backup
 
 on:
   schedule:
-    - cron: 0 4 * * *
+    - cron: 0 18 * * *
 
 jobs:
   scheduled_backup:
